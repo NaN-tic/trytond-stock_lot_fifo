@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 # The COPYRIGHT file at the top level of this repository contains the full
 # copyright notices and license terms.
-import sys
-import os
-DIR = os.path.abspath(os.path.normpath(os.path.join(__file__,
-    '..', '..', '..', '..', '..', 'trytond')))
-if os.path.isdir(DIR):
-    sys.path.insert(0, os.path.dirname(DIR))
-
 from decimal import Decimal
 from itertools import combinations
 import unittest
@@ -34,9 +27,7 @@ class TestStockLotFifoCase(unittest.TestCase):
         self.user = POOL.get('res.user')
 
     def test0006depends(self):
-        '''
-        Test depends.
-        '''
+        'Test depends'
         test_depends()
 
     def test0010lot_fifo(self):
@@ -64,7 +55,9 @@ class TestStockLotFifoCase(unittest.TestCase):
             customer, = self.location.search([('code', '=', 'CUS')])
             for from_, to in combinations([supplier, storage, customer], 2):
                 self.assertEqual(product.lot_is_required(from_, to), True)
-            company, = self.company.search([('rec_name', '=', 'B2CK')])
+            company, = self.company.search([
+                    ('rec_name', '=', 'Dunder Mifflin'),
+                    ])
             currency = company.currency
             self.user.write([self.user(USER)], {
                 'main_company': company.id,
@@ -178,6 +171,3 @@ def suite():
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(
             TestStockLotFifoCase))
     return suite
-
-if __name__ == '__main__':
-    unittest.TextTestRunner(verbosity=2).run(suite())
