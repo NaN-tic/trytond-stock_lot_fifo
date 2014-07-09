@@ -11,7 +11,7 @@ class Move:
     __name__ = 'stock.move'
 
     @classmethod
-    def assign_try(cls, moves, grouping=('product',)):
+    def assign_try(cls, moves, with_childs=True, grouping=('product',)):
         '''
         If lots required assign lots in FIFO before assigning move.
         '''
@@ -71,4 +71,5 @@ class Move:
                     move.save()
                 lots_by_product[move.product.id] = lots
 
-        return super(Move, cls).assign_try(new_moves + moves, grouping)
+        return super(Move, cls).assign_try(new_moves + moves,
+            with_childs=with_childs, grouping=grouping)
