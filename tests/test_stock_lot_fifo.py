@@ -2,7 +2,6 @@
 # The COPYRIGHT file at the top level of this repository contains the full
 # copyright notices and license terms.
 from decimal import Decimal
-from itertools import combinations
 import unittest
 import trytond.tests.test_tryton
 from trytond.tests.test_tryton import POOL, DB_NAME, USER, CONTEXT
@@ -34,7 +33,7 @@ class TestStockLotFifoCase(unittest.TestCase):
         'Test lot fifo'
         with Transaction().start(DB_NAME, USER, context=CONTEXT):
             lot_types = self.lot_type.search([
-                    ('code', 'in', ['supplier', 'customer', 'storage']),
+                    ('code', '=', 'storage'),
                     ])
             kg, = self.uom.search([('name', '=', 'Kilogram')])
             g, = self.uom.search([('name', '=', 'Gram')])
@@ -50,11 +49,12 @@ class TestStockLotFifoCase(unittest.TestCase):
             product, = self.product.create([{
                         'template': template.id,
                         }])
-            supplier, = self.location.search([('code', '=', 'SUP')])
+            lost_found, = self.location.search([('type', '=', 'lost_found')])
             storage, = self.location.search([('code', '=', 'STO')])
-            customer, = self.location.search([('code', '=', 'CUS')])
-            for from_, to in combinations([supplier, storage, customer], 2):
-                self.assertEqual(product.lot_is_required(from_, to), True)
+            self.assertEqual(product.lot_is_required(lost_found, storage),
+                True)
+            self.assertEqual(product.lot_is_required(storage, lost_found),
+                True)
             company, = self.company.search([
                     ('rec_name', '=', 'Dunder Mifflin'),
                     ])
@@ -67,7 +67,7 @@ class TestStockLotFifoCase(unittest.TestCase):
                         'product': product.id,
                         'uom': kg.id,
                         'quantity': 5,
-                        'from_location': supplier.id,
+                        'from_location': lost_found.id,
                         'to_location': storage.id,
                         'company': company.id,
                         'unit_price': Decimal('1'),
@@ -76,7 +76,7 @@ class TestStockLotFifoCase(unittest.TestCase):
                         'product': product.id,
                         'uom': kg.id,
                         'quantity': 5,
-                        'from_location': supplier.id,
+                        'from_location': lost_found.id,
                         'to_location': storage.id,
                         'company': company.id,
                         'unit_price': Decimal('1'),
@@ -98,14 +98,14 @@ class TestStockLotFifoCase(unittest.TestCase):
             self.move.do(moves)
             self.assertEqual(len(self.move.search([
                             ('from_location', '=', storage.id),
-                            ('to_location', '=', customer.id),
+                            ('to_location', '=', lost_found.id),
                            ])), 0)
             moves = self.move.create([{
                         'product': product.id,
                         'uom': kg.id,
                         'quantity': 15,
                         'from_location': storage.id,
-                        'to_location': customer.id,
+                        'to_location': lost_found.id,
                         'company': company.id,
                         'unit_price': Decimal('1'),
                         'currency': currency.id,
@@ -113,7 +113,7 @@ class TestStockLotFifoCase(unittest.TestCase):
             self.assertEqual(self.move.assign_try(moves), False)
             new_moves = self.move.search([
                             ('from_location', '=', storage.id),
-                            ('to_location', '=', customer.id),
+                            ('to_location', '=', lost_found.id),
                            ])
             self.assertEqual(len(new_moves), 3)
             assigned = set()
@@ -140,7 +140,7 @@ class TestStockLotFifoCase(unittest.TestCase):
                         'lot': lot3.id,
                         'uom': kg.id,
                         'quantity': 5,
-                        'from_location': supplier.id,
+                        'from_location': lost_found.id,
                         'to_location': storage.id,
                         'company': company.id,
                         'unit_price': Decimal('1'),
@@ -150,7 +150,7 @@ class TestStockLotFifoCase(unittest.TestCase):
                         'lot': lot4.id,
                         'uom': kg.id,
                         'quantity': 5,
-                        'from_location': supplier.id,
+                        'from_location': lost_found.id,
                         'to_location': storage.id,
                         'company': company.id,
                         'unit_price': Decimal('1'),
