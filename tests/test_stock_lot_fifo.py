@@ -82,7 +82,7 @@ class TestStockLotFifoCase(unittest.TestCase):
                         'unit_price': Decimal('1'),
                         'currency': currency.id,
                         }])
-            self.assertRaises(Exception, self.move.do, moves)
+            self.assertRaises(Exception, self.move.do, moves[1])
             lot1, lot2 = self.lot.create([{
                         'number': '1',
                         'product': product.id,
