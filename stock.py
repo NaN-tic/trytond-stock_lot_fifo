@@ -80,9 +80,11 @@ class Move:
                     consumed_quantities[lot.id] += assigned_quantity
                     remainder -= assigned_quantity
                 if not lots:
-                    move.quantity = Uom.compute_qty(move.product.default_uom,
-                        remainder, move.uom)
-                    move.save()
+                    remainder_quantity = Uom.compute_qty(
+                        move.product.default_uom, remainder, move.uom)
+                    if move.quantity != remainder_quantity:
+                        move.quantity = remainder_quantity
+                        move.save()
                 lots_by_product[move.product.id] = lots
 
         return super(Move, cls).assign_try(new_moves + moves,
