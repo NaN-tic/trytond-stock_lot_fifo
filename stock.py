@@ -46,6 +46,8 @@ class Move:
         lots_by_product = {}
         consumed_quantities = {}
         order = cls._get_fifo_search_order_by()
+        assigned_moves = []
+        to_write = []
         for move in moves:
             if (not move.lot and move.product.lot_is_required(
                         move.from_location, move.to_location)):
@@ -66,7 +68,9 @@ class Move:
                             move.product.default_uom, assigned_quantity,
                             move.uom)
                         move.lot = lot
-                        move.save()
+                        if move.state == 'assigned':
+                            assigned_moves.append(move)
+                        to_write.extend(([move], move._save_values))
                         lots.insert(0, lot)
                     else:
                         quantity = Uom.compute_qty(
@@ -84,8 +88,16 @@ class Move:
                         move.product.default_uom, remainder, move.uom)
                     if move.quantity != remainder_quantity:
                         move.quantity = remainder_quantity
-                        move.save()
+                        if move.state == 'assigned':
+                            assigned_moves.append(move)
+                        to_write.extend(([move], move._save_values))
                 lots_by_product[move.product.id] = lots
+        if assigned_moves:
+            cls.write(assigned_moves, {'state': 'draft'})
+        if to_write:
+            cls.write(*to_write)
+        if assigned_moves:
+            cls.write(assigned_moves, {'state': 'assigned'})
 
         return super(Move, cls).assign_try(new_moves + moves,
             with_childs=with_childs, grouping=grouping)
