@@ -1,43 +1,40 @@
-#!/usr/bin/env python
-# The COPYRIGHT file at the top level of this repository contains the full
-# copyright notices and license terms.
-from decimal import Decimal
+# This file is part of Tryton.  The COPYRIGHT file at the top level of
+# this repository contains the full copyright notices and license terms.
 import unittest
+from decimal import Decimal
+
 import trytond.tests.test_tryton
-from trytond.tests.test_tryton import POOL, DB_NAME, USER, CONTEXT
-from trytond.tests.test_tryton import test_depends
-from trytond.transaction import Transaction
+from trytond.tests.test_tryton import ModuleTestCase, with_transaction
+from trytond.pool import Pool
+
+from trytond.modules.company.tests import create_company, set_company
 
 
-class TestStockLotFifoCase(unittest.TestCase):
+class TestStockLotFifoCase(ModuleTestCase):
     'Test stock_lot_fifo module'
+    module = 'stock_lot_fifo'
 
-    def setUp(self):
-        trytond.tests.test_tryton.install_module('stock_lot_fifo')
-        self.category = POOL.get('product.category')
-        self.company = POOL.get('company.company')
-        self.location = POOL.get('stock.location')
-        self.lot = POOL.get('stock.lot')
-        self.lot_type = POOL.get('stock.lot.type')
-        self.move = POOL.get('stock.move')
-        self.product = POOL.get('product.product')
-        self.template = POOL.get('product.template')
-        self.uom = POOL.get('product.uom')
-        self.user = POOL.get('res.user')
-
-    def test0006depends(self):
-        'Test depends'
-        test_depends()
-
+    @with_transaction()
     def test0010lot_fifo(self):
         'Test lot fifo'
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            lot_types = self.lot_type.search([
+        pool = Pool()
+        Location = pool.get('stock.location')
+        Lot = pool.get('stock.lot')
+        LotType = pool.get('stock.lot.type')
+        Move = pool.get('stock.move')
+        Product = pool.get('product.product')
+        Template = pool.get('product.template')
+        Uom = pool.get('product.uom')
+
+        # Create Company
+        company = create_company()
+        with set_company(company):
+            lot_types = LotType.search([
                     ('code', '=', 'storage'),
                     ])
-            kg, = self.uom.search([('name', '=', 'Kilogram')])
-            g, = self.uom.search([('name', '=', 'Gram')])
-            template, = self.template.create([{
+            kg, = Uom.search([('name', '=', 'Kilogram')])
+            g, = Uom.search([('name', '=', 'Gram')])
+            template, = Template.create([{
                         'name': 'Test lot_fifo',
                         'type': 'goods',
                         'list_price': Decimal(1),
@@ -46,44 +43,32 @@ class TestStockLotFifoCase(unittest.TestCase):
                         'default_uom': kg.id,
                         'lot_required': [('add', [x.id for x in lot_types])],
                         }])
-            product, = self.product.create([{
+            product, = Product.create([{
                         'template': template.id,
                         }])
-            lost_found, = self.location.search([('type', '=', 'lost_found')])
-            storage, = self.location.search([('code', '=', 'STO')])
+            lost_found, = Location.search([('type', '=', 'lost_found')])
+            storage, = Location.search([('code', '=', 'STO')])
             self.assertEqual(product.lot_is_required(lost_found, storage),
                 True)
             self.assertEqual(product.lot_is_required(storage, lost_found),
                 True)
-            company, = self.company.search([
-                    ('rec_name', '=', 'Dunder Mifflin'),
-                    ])
-            currency = company.currency
-            self.user.write([self.user(USER)], {
-                'main_company': company.id,
-                'company': company.id,
-                })
-            moves = self.move.create([{
+            moves = Move.create([{
                         'product': product.id,
                         'uom': kg.id,
                         'quantity': 5,
                         'from_location': lost_found.id,
                         'to_location': storage.id,
-                        'company': company.id,
                         'unit_price': Decimal('1'),
-                        'currency': currency.id,
                         }, {
                         'product': product.id,
                         'uom': kg.id,
                         'quantity': 5,
                         'from_location': lost_found.id,
                         'to_location': storage.id,
-                        'company': company.id,
                         'unit_price': Decimal('1'),
-                        'currency': currency.id,
                         }])
-            self.assertRaises(Exception, self.move.do, moves[1])
-            lot1, lot2 = self.lot.create([{
+            self.assertRaises(Exception, Move.do, moves[1])
+            lot1, lot2 = Lot.create([{
                         'number': '1',
                         'product': product.id,
                         }, {
@@ -95,23 +80,21 @@ class TestStockLotFifoCase(unittest.TestCase):
             move1.save()
             move2.lot = lot2
             move2.save()
-            self.move.do(moves)
-            self.assertEqual(len(self.move.search([
+            Move.do(moves)
+            self.assertEqual(len(Move.search([
                             ('from_location', '=', storage.id),
                             ('to_location', '=', lost_found.id),
                            ])), 0)
-            moves = self.move.create([{
+            moves = Move.create([{
                         'product': product.id,
                         'uom': kg.id,
                         'quantity': 15,
                         'from_location': storage.id,
                         'to_location': lost_found.id,
-                        'company': company.id,
                         'unit_price': Decimal('1'),
-                        'currency': currency.id,
                         }])
-            self.assertEqual(self.move.assign_try(moves), False)
-            new_moves = self.move.search([
+            self.assertEqual(Move.assign_try(moves), False)
+            new_moves = Move.search([
                             ('from_location', '=', storage.id),
                             ('to_location', '=', lost_found.id),
                            ])
@@ -128,23 +111,21 @@ class TestStockLotFifoCase(unittest.TestCase):
                     self.assertIsNone(move.lot)
             self.assertEqual(len(assigned), 2)
             self.assertEqual(len(draft), 1)
-            lot3, lot4 = self.lot.create([{
+            lot3, lot4 = Lot.create([{
                         'number': '3',
                         'product': product.id,
                         }, {
                         'number': '4',
                         'product': product.id,
                         }])
-            moves = self.move.create([{
+            moves = Move.create([{
                         'product': product.id,
                         'lot': lot3.id,
                         'uom': kg.id,
                         'quantity': 5,
                         'from_location': lost_found.id,
                         'to_location': storage.id,
-                        'company': company.id,
                         'unit_price': Decimal('1'),
-                        'currency': currency.id,
                         }, {
                         'product': product.id,
                         'lot': lot4.id,
@@ -152,22 +133,16 @@ class TestStockLotFifoCase(unittest.TestCase):
                         'quantity': 5,
                         'from_location': lost_found.id,
                         'to_location': storage.id,
-                        'company': company.id,
                         'unit_price': Decimal('1'),
-                        'currency': currency.id,
                         }])
-            self.move.do(moves)
-            self.assertEqual(self.move.assign_try(list(draft)), True)
+            Move.do(moves)
+            self.assertEqual(Move.assign_try(list(draft)), True)
             move, = draft
             self.assertEqual(move.lot, lot3)
 
 
 def suite():
     suite = trytond.tests.test_tryton.suite()
-    from trytond.modules.company.tests import test_company
-    for test in test_company.suite():
-        if test not in suite:
-            suite.addTest(test)
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(
             TestStockLotFifoCase))
     return suite
