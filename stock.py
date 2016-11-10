@@ -65,6 +65,8 @@ class Move:
                     consumed_quantities.setdefault(lot.id, 0.0)
                     lot_quantity = lot.quantity - consumed_quantities[lot.id]
                     assigned_quantity = min(lot_quantity, remainder)
+                    if not assigned_quantity > 0.0:
+                        continue
                     if assigned_quantity == remainder:
                         move.quantity = Uom.compute_qty(
                             move.product.default_uom, assigned_quantity,
