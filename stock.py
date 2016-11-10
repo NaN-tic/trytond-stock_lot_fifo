@@ -60,6 +60,8 @@ class Move:
                 remainder = move.internal_quantity
                 while lots and remainder > 0.0:
                     lot = lots.pop(0)
+                    if not lot.quantity > 0.0:
+                        continue
                     consumed_quantities.setdefault(lot.id, 0.0)
                     lot_quantity = lot.quantity - consumed_quantities[lot.id]
                     assigned_quantity = min(lot_quantity, remainder)
