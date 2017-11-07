@@ -31,7 +31,15 @@ class Move:
 
     @staticmethod
     def _get_fifo_search_order_by():
-        return [('create_date', 'ASC')]
+        pool = Pool()
+        Lot = pool.get('stock.lot')
+
+        order = []
+        if hasattr(Lot, 'shelf_life_expiration_date'):
+            order.append(('shelf_life_expiration_date', 'ASC'))
+            order.append(('expiration_date', 'ASC'))
+        order.append(('create_date', 'ASC'))
+        return order
 
     @classmethod
     def assign_try(cls, moves, with_childs=True, grouping=('product',)):
