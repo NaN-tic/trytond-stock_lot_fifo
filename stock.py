@@ -38,6 +38,8 @@ class Move:
         if hasattr(Lot, 'shelf_life_expiration_date'):
             order.append(('shelf_life_expiration_date', 'ASC'))
             order.append(('expiration_date', 'ASC'))
+        if hasattr(Lot, 'lot_date'):
+            order.append(('lot_date', 'ASC'))
         order.append(('create_date', 'ASC'))
         return order
 
