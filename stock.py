@@ -10,6 +10,39 @@ __metaclass__ = PoolMeta
 class Move:
     __name__ = 'stock.move'
 
+    @property
+    def fifo_search_context(self):
+        pool = Pool()
+        Date = pool.get('ir.date')
+        today = Date.today()
+        return {
+            'stock_date_end': today,
+            'locations': [self.from_location.id],
+            'stock_assign': True,
+            'forecast': False,
+            }
+
+    @property
+    def fifo_search_domain(self):
+        return [
+            ('product', '=', self.product.id),
+            ('quantity', '>', 0.0),
+            ]
+
+    @staticmethod
+    def _get_fifo_search_order_by():
+        pool = Pool()
+        Lot = pool.get('stock.lot')
+
+        order = []
+        if hasattr(Lot, 'shelf_life_expiration_date'):
+            order.append(('shelf_life_expiration_date', 'ASC'))
+            order.append(('expiration_date', 'ASC'))
+        if hasattr(Lot, 'lot_date'):
+            order.append(('lot_date', 'ASC'))
+        order.append(('create_date', 'ASC'))
+        return order
+
     @classmethod
     def assign_try(cls, moves, with_childs=True, grouping=('product',)):
         '''
@@ -18,27 +51,18 @@ class Move:
         pool = Pool()
         Uom = pool.get('product.uom')
         Lot = pool.get('stock.lot')
-        Date = pool.get('ir.date')
 
-        today = Date.today()
         new_moves = []
         lots_by_product = {}
         consumed_quantities = {}
+        order = cls._get_fifo_search_order_by()
         for move in moves:
             if (not move.lot and move.product.lot_is_required(
                         move.from_location, move.to_location)):
                 if not move.product.id in lots_by_product:
-                    search_context = {
-                        'stock_date_end': today,
-                        'locations': [move.from_location.id],
-                        'stock_assign': True,
-                        'forecast': False,
-                        }
-                    with Transaction().set_context(search_context):
-                        lots_by_product[move.product.id] = Lot.search([
-                                ('product', '=', move.product.id),
-                                ('quantity', '>', 0.0),
-                                ], order=[('create_date', 'ASC')])
+                    with Transaction().set_context(move.fifo_search_context):
+                        lots_by_product[move.product.id] = Lot.search(
+                            move.fifo_search_domain, order=order)
 
                 lots = lots_by_product[move.product.id]
                 remainder = move.internal_quantity
