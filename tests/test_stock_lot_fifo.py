@@ -3,17 +3,20 @@
 # copyright notices and license terms.
 from decimal import Decimal
 import unittest
+import doctest
 import trytond.tests.test_tryton
+from trytond.tests.test_tryton import ModuleTestCase
 from trytond.tests.test_tryton import POOL, DB_NAME, USER, CONTEXT
-from trytond.tests.test_tryton import test_depends
+from trytond.tests.test_tryton import doctest_setup, doctest_teardown
 from trytond.transaction import Transaction
 
 
-class TestStockLotFifoCase(unittest.TestCase):
+class StockLotFifoTestCase(ModuleTestCase):
     'Test stock_lot_fifo module'
+    module = 'stock_lot_fifo'
 
     def setUp(self):
-        trytond.tests.test_tryton.install_module('stock_lot_fifo')
+        super(StockLotFifoTestCase, self).setUp()
         self.category = POOL.get('product.category')
         self.company = POOL.get('company.company')
         self.location = POOL.get('stock.location')
@@ -24,10 +27,6 @@ class TestStockLotFifoCase(unittest.TestCase):
         self.template = POOL.get('product.template')
         self.uom = POOL.get('product.uom')
         self.user = POOL.get('res.user')
-
-    def test0006depends(self):
-        'Test depends'
-        test_depends()
 
     def test0010lot_fifo(self):
         'Test lot fifo'
@@ -161,13 +160,12 @@ class TestStockLotFifoCase(unittest.TestCase):
             move, = draft
             self.assertEqual(move.lot, lot3)
 
-
 def suite():
     suite = trytond.tests.test_tryton.suite()
     from trytond.modules.company.tests import test_company
     for test in test_company.suite():
-        if test not in suite:
+        if test not in suite and not isinstance(test, doctest.DocTestCase):
             suite.addTest(test)
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(
-            TestStockLotFifoCase))
+            StockLotFifoTestCase))
     return suite
