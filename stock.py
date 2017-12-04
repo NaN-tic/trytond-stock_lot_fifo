@@ -80,7 +80,9 @@ class Move:
             if (not move.lot and move.product.lot_is_required(
                         move.from_location, move.to_location)):
 
-                lots = lots_by_product[move.product.id]
+                if move.product.id in lots_by_product:
+                    lots = lots_by_product[move.product.id]
+
                 remainder = move.internal_quantity
                 while lots and remainder > 0.0:
                     lot = lots.pop(0)
