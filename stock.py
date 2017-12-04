@@ -11,6 +11,10 @@ class Move:
     __name__ = 'stock.move'
 
     @property
+    def fifo_key(self):
+        return (self.from_location.id,)
+
+    @property
     def fifo_search_context(self):
         pool = Pool()
         Date = pool.get('ir.date')
@@ -25,7 +29,6 @@ class Move:
     @property
     def fifo_search_domain(self):
         return [
-            ('product', '=', self.product.id),
             ('quantity', '>', 0.0),
             ]
 
@@ -55,14 +58,27 @@ class Move:
         new_moves = []
         lots_by_product = {}
         consumed_quantities = {}
+        grouped = {}
         order = cls._get_fifo_search_order_by()
         for move in moves:
             if (not move.lot and move.product.lot_is_required(
                         move.from_location, move.to_location)):
-                if not move.product.id in lots_by_product:
-                    with Transaction().set_context(move.fifo_search_context):
-                        lots_by_product[move.product.id] = Lot.search(
-                            move.fifo_search_domain, order=order)
+                grouped.setdefault(move.fifo_key, []).append(move)
+
+        for key, moves in grouped.iteritems():
+            move = moves[0]
+            with Transaction().set_context(move.fifo_search_context):
+                products = list(set([x.product.id for x in moves]))
+                lots = Lot.search([
+                        ('product', 'in', products),
+                        ] + move.fifo_search_domain, order=order)
+                for lot in lots:
+                    lots_by_product.setdefault(lot.product.id, []).append(lot)
+
+        to_save = []
+        for move in moves:
+            if (not move.lot and move.product.lot_is_required(
+                        move.from_location, move.to_location)):
 
                 lots = lots_by_product[move.product.id]
                 remainder = move.internal_quantity
@@ -78,7 +94,7 @@ class Move:
                             move.product.default_uom, assigned_quantity,
                             move.uom)
                         move.lot = lot
-                        move.save()
+                        to_save.append(move)
                         lots.insert(0, lot)
                     else:
                         quantity = Uom.compute_qty(
@@ -94,8 +110,11 @@ class Move:
                 if not lots:
                     move.quantity = Uom.compute_qty(move.product.default_uom,
                         remainder, move.uom)
-                    move.save()
+                    to_save.append(move)
                 lots_by_product[move.product.id] = lots
+
+        if to_save:
+            cls.save(to_save)
 
         return super(Move, cls).assign_try(new_moves + moves,
             with_childs=with_childs, grouping=grouping)
