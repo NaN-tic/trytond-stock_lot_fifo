@@ -82,6 +82,8 @@ class Move:
 
                 if move.product.id in lots_by_product:
                     lots = lots_by_product[move.product.id]
+                else:
+                    lots = []
 
                 remainder = move.internal_quantity
                 while lots and remainder > 0.0:
