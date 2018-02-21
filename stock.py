@@ -1,13 +1,13 @@
-#The COPYRIGHT file at the top level of this repository contains the full
-#copyright notices and license terms.
+# The COPYRIGHT file at the top level of this repository contains the full
+# copyright notices and license terms.
 from trytond.pool import Pool, PoolMeta
 from trytond.transaction import Transaction
 
 __all__ = ['Move']
-__metaclass__ = PoolMeta
 
 
 class Move:
+    __metaclass__ = PoolMeta
     __name__ = 'stock.move'
 
     @property
@@ -59,7 +59,7 @@ class Move:
         for move in moves:
             if (not move.lot and move.product.lot_is_required(
                         move.from_location, move.to_location)):
-                if not move.product.id in lots_by_product:
+                if move.product.id not in lots_by_product:
                     with Transaction().set_context(move.fifo_search_context):
                         lots_by_product[move.product.id] = Lot.search(
                             move.fifo_search_domain, order=order)
