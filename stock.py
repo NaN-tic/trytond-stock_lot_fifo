@@ -26,7 +26,6 @@ class Move:
     def fifo_search_domain(self):
         return [
             ('product', '=', self.product.id),
-            ('quantity', '>', 0.0),
             ]
 
     @staticmethod
@@ -59,10 +58,12 @@ class Move:
         for move in moves:
             if (not move.lot and move.product.lot_is_required(
                         move.from_location, move.to_location)):
+
                 if move.product.id not in lots_by_product:
                     with Transaction().set_context(move.fifo_search_context):
-                        lots_by_product[move.product.id] = Lot.search(
-                            move.fifo_search_domain, order=order)
+                        lots_by_product[move.product.id] = [x for x in
+                            Lot.search(move.fifo_search_domain, order=order)
+                            if x.quantity > 0]
 
                 lots = lots_by_product[move.product.id]
                 remainder = move.internal_quantity
