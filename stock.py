@@ -68,7 +68,14 @@ class Move(metaclass=PoolMeta):
                 remainder = move.internal_quantity
                 while lots and remainder > 0.0:
                     lot = lots.pop(0)
-                    consumed_quantities.setdefault(lot.id, 0.0)
+                    production_quantity = 0.0
+                    if hasattr(move, 'production_input'):
+                        for production_input in move.production_input.inputs:
+                            if (production_input.product == move.product
+                                    and production_input.state == 'draft'
+                                    and lot == production_input.lot):
+                                production_quantity += production_input.quantity
+                    consumed_quantities.setdefault(lot.id, production_quantity)
                     lot_quantity = lot.quantity - consumed_quantities[lot.id]
                     if not lot_quantity > 0.0:
                         continue
