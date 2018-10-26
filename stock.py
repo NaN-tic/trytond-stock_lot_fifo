@@ -61,7 +61,7 @@ class Move:
                 while lots and remainder > 0.0:
                     lot = lots.pop(0)
                     production_quantity = 0.0
-                    if hasattr(move, 'production_input'):
+                    if getattr(move, 'production_input', False):
                         for production_input in move.production_input.inputs:
                             if (production_input.product == move.product
                                     and production_input.state == 'draft'
