@@ -38,12 +38,12 @@ class TestStockLotFifoCase(ModuleTestCase):
                         'name': 'Test lot_fifo',
                         'type': 'goods',
                         'list_price': Decimal(1),
-                        'cost_price': Decimal(0),
                         'cost_price_method': 'fixed',
                         'default_uom': kg.id,
                         'lot_required': [('add', [x.id for x in lot_types])],
                         }])
             product, = Product.create([{
+                        'cost_price': Decimal(0),
                         'template': template.id,
                         }])
             lost_found, = Location.search([('type', '=', 'lost_found')])
