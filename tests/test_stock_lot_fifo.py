@@ -20,7 +20,6 @@ class TestStockLotFifoCase(ModuleTestCase):
         pool = Pool()
         Location = pool.get('stock.location')
         Lot = pool.get('stock.lot')
-        LotType = pool.get('stock.lot.type')
         Move = pool.get('stock.move')
         Product = pool.get('product.product')
         Template = pool.get('product.template')
@@ -29,9 +28,6 @@ class TestStockLotFifoCase(ModuleTestCase):
         # Create Company
         company = create_company()
         with set_company(company):
-            lot_types = LotType.search([
-                    ('code', '=', 'storage'),
-                    ])
             kg, = Uom.search([('name', '=', 'Kilogram')])
             g, = Uom.search([('name', '=', 'Gram')])
             template, = Template.create([{
@@ -40,7 +36,7 @@ class TestStockLotFifoCase(ModuleTestCase):
                         'list_price': Decimal(1),
                         'cost_price_method': 'fixed',
                         'default_uom': kg.id,
-                        'lot_required': [('add', [x.id for x in lot_types])],
+                        'lot_required': ['storage'],
                         }])
             product, = Product.create([{
                         'cost_price': Decimal(0),
