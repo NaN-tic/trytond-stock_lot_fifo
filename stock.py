@@ -55,6 +55,9 @@ class Move(metaclass=PoolMeta):
         consumed_quantities = {}
         order = cls._get_fifo_search_order_by()
         for move in moves:
+            if move.state != 'draft':
+                continue
+
             if (not move.lot and move.product.lot_is_required(
                         move.from_location, move.to_location)):
 
