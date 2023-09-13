@@ -86,14 +86,14 @@ class Move(metaclass=PoolMeta):
                     if assigned_quantity == remainder:
                         move.quantity = Uom.compute_qty(
                             move.product.default_uom, assigned_quantity,
-                            move.uom)
+                            move.unit)
                         move.lot = lot
                         move.save()
                         lots.insert(0, lot)
                     else:
                         quantity = Uom.compute_qty(
                             move.product.default_uom, assigned_quantity,
-                            move.uom)
+                            move.unit)
                         new_moves.extend(cls.copy([move], {
                                     'lot': lot.id,
                                     'quantity': quantity,
@@ -103,7 +103,7 @@ class Move(metaclass=PoolMeta):
                     remainder -= assigned_quantity
                 if not lots:
                     move.quantity = Uom.compute_qty(move.product.default_uom,
-                        remainder, move.uom)
+                        remainder, move.unit)
                     move.save()
                 lots_by_product[move.product.id] = lots
 

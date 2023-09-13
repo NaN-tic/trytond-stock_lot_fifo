@@ -51,14 +51,14 @@ class StockLotFifoTestCase(CompanyTestMixin, ModuleTestCase):
                 True)
             moves = Move.create([{
                         'product': product.id,
-                        'uom': kg.id,
+                        'unit': kg.id,
                         'quantity': 5,
                         'from_location': lost_found.id,
                         'to_location': storage.id,
                         'unit_price': Decimal('1'),
                         }, {
                         'product': product.id,
-                        'uom': kg.id,
+                        'unit': kg.id,
                         'quantity': 5,
                         'from_location': lost_found.id,
                         'to_location': storage.id,
@@ -84,7 +84,7 @@ class StockLotFifoTestCase(CompanyTestMixin, ModuleTestCase):
                            ])), 0)
             moves = Move.create([{
                         'product': product.id,
-                        'uom': kg.id,
+                        'unit': kg.id,
                         'quantity': 15,
                         'from_location': storage.id,
                         'to_location': lost_found.id,
@@ -118,7 +118,7 @@ class StockLotFifoTestCase(CompanyTestMixin, ModuleTestCase):
             moves = Move.create([{
                         'product': product.id,
                         'lot': lot3.id,
-                        'uom': kg.id,
+                        'unit': kg.id,
                         'quantity': 5,
                         'from_location': lost_found.id,
                         'to_location': storage.id,
@@ -126,7 +126,7 @@ class StockLotFifoTestCase(CompanyTestMixin, ModuleTestCase):
                         }, {
                         'product': product.id,
                         'lot': lot4.id,
-                        'uom': kg.id,
+                        'unit': kg.id,
                         'quantity': 5,
                         'from_location': lost_found.id,
                         'to_location': storage.id,
