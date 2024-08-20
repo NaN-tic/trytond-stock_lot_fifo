@@ -55,14 +55,12 @@ class StockLotFifoTestCase(CompanyTestMixin, ModuleTestCase):
                         'quantity': 5,
                         'from_location': lost_found.id,
                         'to_location': storage.id,
-                        'unit_price': Decimal('1'),
                         }, {
                         'product': product.id,
                         'unit': kg.id,
                         'quantity': 5,
                         'from_location': lost_found.id,
                         'to_location': storage.id,
-                        'unit_price': Decimal('1'),
                         }])
             self.assertRaises(Exception, Move.do, moves[1])
             lot1, lot2 = Lot.create([{
@@ -88,7 +86,6 @@ class StockLotFifoTestCase(CompanyTestMixin, ModuleTestCase):
                         'quantity': 15,
                         'from_location': storage.id,
                         'to_location': lost_found.id,
-                        'unit_price': Decimal('1'),
                         }])
             self.assertEqual(Move.assign_try(moves), False)
             new_moves = Move.search([
@@ -122,7 +119,6 @@ class StockLotFifoTestCase(CompanyTestMixin, ModuleTestCase):
                         'quantity': 5,
                         'from_location': lost_found.id,
                         'to_location': storage.id,
-                        'unit_price': Decimal('1'),
                         }, {
                         'product': product.id,
                         'lot': lot4.id,
@@ -130,7 +126,6 @@ class StockLotFifoTestCase(CompanyTestMixin, ModuleTestCase):
                         'quantity': 5,
                         'from_location': lost_found.id,
                         'to_location': storage.id,
-                        'unit_price': Decimal('1'),
                         }])
             Move.do(moves)
             self.assertEqual(Move.assign_try(list(draft)), True)
