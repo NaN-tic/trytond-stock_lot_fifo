@@ -23,12 +23,6 @@ class Move(metaclass=PoolMeta):
             'forecast': False,
             }
 
-    @property
-    def fifo_search_domain(self):
-        return [
-            ('product', '=', self.product.id),
-            ]
-
     @staticmethod
     def _get_fifo_search_order_by():
         pool = Pool()
