@@ -9,6 +9,8 @@ class Lot(metaclass=PoolMeta):
     def sort_quantities_fifo(self):
         if getattr(self, 'shelf_life_expiration_date', None):
             return self.shelf_life_expiration_date
+        if getattr(self, 'expiration_date', None):
+            return self.expiration_date
         if getattr(self, 'lot_date', None):
             return self.lot_date
         return self.create_date.date()
