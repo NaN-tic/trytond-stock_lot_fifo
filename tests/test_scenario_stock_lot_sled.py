@@ -189,3 +189,50 @@ class Test(unittest.TestCase):
         self.assertEqual((move3.lot, move3.quantity), (lot3, 6.0))
         # lot by shelf_life_expiration_date + days 10
         self.assertEqual((move4.lot, move4.quantity), (lot2, 4.0))
+
+        # Create two new lots with expiration_date
+        lot4 = Lot()
+        lot4.number = 'LOT4'
+        lot4.product = product
+        lot4.expiration_date = today + relativedelta(days=10)
+        lot4.save()
+
+        lot5 = Lot()
+        lot5.number = 'LOT5'
+        lot5.product = product
+        lot5.expiration_date = today + relativedelta(days=2)
+        lot5.save()
+
+        # Create new supplier moves with lot
+        for lot in (lot4, lot5):
+            move3_in = Move()
+            move3_in.from_location = supplier_loc
+            move3_in.to_location = storage_loc
+            move3_in.product = product
+            move3_in.company = company
+            move3_in.lot = lot
+            move3_in.quantity = 10
+            move3_in.unit_price = Decimal('1')
+            move3_in.currency = company.currency
+            move3_in.save()
+            move3_in.click('do')
+
+        # Create Shipment Out with two moves: without lot (assign try set lot)
+        shipment_out = ShipmentOut()
+        shipment_out.planned_date = today
+        shipment_out.customer = customer
+        shipment_out.warehouse = warehouse_loc
+        outgoing_move = shipment_out.outgoing_moves.new()
+        outgoing_move.product = product
+        outgoing_move.quantity = 1
+        outgoing_move.from_location = output_loc
+        outgoing_move.to_location = customer_loc
+        outgoing_move.unit_price = Decimal('1')
+        outgoing_move.currency = company.currency
+        shipment_out.save()
+        shipment_out.click('wait')
+        shipment_out.click('assign_try')
+        self.assertEqual(shipment_out.state, 'assigned')
+
+        move1, = shipment_out.inventory_moves
+        self.assertEqual(move1.lot.number, 'LOT5') # early expiration date
